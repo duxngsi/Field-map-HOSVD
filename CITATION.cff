@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below (Du & Groening, 2018)."
+title: "Field-map HOSVD"
+abstract: >-
+  Memory-efficient Higher-Order Singular Value Decomposition (HOSVD) for
+  compressing and denoising multi-dimensional electromagnetic field-map data.
+type: software
+authors:
+  - family-names: Du
+    given-names: Xiaonan
+    affiliation: "GSI Helmholtzzentrum für Schwerionenforschung GmbH, Darmstadt, Germany"
+repository-code: "https://github.com/duxngsi/Field-map-HOSVD"
+license: MIT
+version: "1.0.0"
+date-released: "2026-06-20"
+keywords:
+  - HOSVD
+  - Tucker decomposition
+  - tensor decomposition
+  - data compression
+  - noise reduction
+  - field map
+  - accelerator physics
+preferred-citation:
+  type: article
+  title: "Compression and noise reduction of field maps"
+  authors:
+    - family-names: Du
+      given-names: X.
+    - family-names: Groening
+      given-names: L.
+  journal: "Physical Review Accelerators and Beams"
+  volume: 21
+  issue: 8
+  start: "084601"
+  year: 2018
+  month: 8
+  doi: "10.1103/PhysRevAccelBeams.21.084601"
+  url: "https://doi.org/10.1103/PhysRevAccelBeams.21.084601"

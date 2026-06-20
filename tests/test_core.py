@@ -72,6 +72,16 @@ def test_methods_agree(method):
     assert relative_error(ref, out) < 1e-10
 
 
+def test_gram_and_svd_report_consistent_spectrum_lengths():
+    # mode-0 unfolding is (12, 9): wide-and-short, where the gram path used to
+    # return 12 singular values vs the svd path's 9. They should now match.
+    field = make_synthetic_field((12, 3, 3), rank=2, seed=31)
+    gram = HOSVDCompressor(method="gram").fit(field)
+    svd = HOSVDCompressor(method="svd").fit(field)
+    for sg, ss in zip(gram.singular_values, svd.singular_values):
+        assert sg.shape == ss.shape
+
+
 def test_sequential_and_classic_close():
     field = make_synthetic_field((6, 10, 5, 5, 3), rank=4, seed=4)
     seq = HOSVDCompressor(ranks=(4, 5, 4, 4, 3), sequential=True).fit(field).reconstruct()

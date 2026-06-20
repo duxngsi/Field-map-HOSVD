@@ -26,6 +26,7 @@ from .core import (
     mode_fold,
     mode_n_product,
     mode_unfold,
+    select_ranks,
 )
 from .datasets import DEFAULT_SHAPE, add_noise, make_synthetic_field
 from .metrics import (
@@ -44,6 +45,7 @@ __all__ = [
     # core
     "HOSVDCompressor",
     "hosvd",
+    "select_ranks",
     "DataSVDCompress",
     "mode_unfold",
     "mode_fold",
