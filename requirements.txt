@@ -1,0 +1,8 @@
+# Core runtime dependency
+numpy>=1.20
+
+# Optional: only needed to run examples/field_map_demo.py
+matplotlib>=3.3
+
+# Optional: only needed to run the test suite
+pytest>=7.0

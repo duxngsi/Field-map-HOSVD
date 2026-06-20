@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "field-map-hosvd"
+version = "1.0.0"
+description = "Memory-efficient HOSVD for compressing and denoising multi-dimensional field maps"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "duxngsi" }]
+keywords = [
+    "hosvd",
+    "tucker",
+    "tensor-decomposition",
+    "compression",
+    "denoising",
+    "field-map",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Intended Audience :: Science/Research",
+]
+dependencies = ["numpy>=1.20"]
+
+[project.optional-dependencies]
+demo = ["matplotlib>=3.3"]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/duxngsi/Field-map-HOSVD"
+Repository = "https://github.com/duxngsi/Field-map-HOSVD"
+
+[tool.setuptools]
+packages = ["hosvd"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
