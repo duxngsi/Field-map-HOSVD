@@ -3,22 +3,23 @@ hosvd.datasets
 ==============
 
 Reproducible synthetic field-map data so the demo and the tests can run
-without the original (unpublished) ``Field_5D.npy`` measurement file.
+without the original RF field-map measurement file ``Field_5D.npy``.
 
-``make_synthetic_field`` builds a smooth, low-multilinear-rank 5-D vector
-field on a structured grid -- exactly the kind of data HOSVD compresses
-well -- and ``add_noise`` lets you contaminate it so the denoising behaviour
-can be demonstrated.
+In the paper (Du & Groening 2018) HOSVD was applied to the electric field
+map of a drift-tube linac (DTL) cavity.  ``make_synthetic_field`` mimics that
+setting: a smooth, low-multilinear-rank 5-D vector field sampled on a
+structured grid -- exactly the kind of data HOSVD compresses well -- and
+``add_noise`` contaminates it so the denoising behaviour can be demonstrated.
 
-合成数据：生成平滑、低多重秩的 5 维矢量场，用于在缺少原始 ``Field_5D.npy``
-的情况下运行示例与测试；``add_noise`` 用于加噪以演示去噪。
+合成数据：模拟论文中 DTL 腔的电场图，生成平滑、低多重秩的 5 维矢量场，用于在
+缺少原始 ``Field_5D.npy`` 时运行示例与测试；``add_noise`` 用于加噪以演示去噪。
 
 Layout convention (mirrors the original project)::
 
-    axis 0 : x grid
-    axis 1 : z grid (longitudinal, the "many steps" axis)
-    axis 2 : y grid
-    axis 3 : parameter / time sample
+    axis 0 : x grid (transverse)
+    axis 1 : z grid (longitudinal, along the linac -- the "many steps" axis)
+    axis 2 : y grid (transverse)
+    axis 3 : parameter / time sample (e.g. RF phase)
     axis 4 : field component (Ex, Ey, Ez)
 """
 from __future__ import annotations

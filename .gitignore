@@ -18,8 +18,9 @@ env/
 *.npy
 examples/output/
 
-# Editors / OS
+# Editors / OS / tooling
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+.claude/

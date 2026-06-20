@@ -7,9 +7,9 @@ name = "field-map-hosvd"
 version = "1.0.0"
 description = "Memory-efficient HOSVD for compressing and denoising multi-dimensional field maps"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "duxngsi" }]
+authors = [{ name = "Xiaonan Du" }]
 keywords = [
     "hosvd",
     "tucker",
@@ -20,6 +20,10 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Mathematics",
@@ -34,6 +38,7 @@ dev = ["pytest>=7.0"]
 [project.urls]
 Homepage = "https://github.com/duxngsi/Field-map-HOSVD"
 Repository = "https://github.com/duxngsi/Field-map-HOSVD"
+Paper = "https://doi.org/10.1103/PhysRevAccelBeams.21.084601"
 
 [tool.setuptools]
 packages = ["hosvd"]

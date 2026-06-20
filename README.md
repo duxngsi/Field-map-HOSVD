@@ -4,24 +4,32 @@
 
 用高阶奇异值分解 (HOSVD) 对多维场图数据做**压缩**与**去噪**的 Python 工具。
 
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+[![CI](https://github.com/duxngsi/Field-map-HOSVD/actions/workflows/ci.yml/badge.svg)](https://github.com/duxngsi/Field-map-HOSVD/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![NumPy](https://img.shields.io/badge/numpy-%3E%3D1.20-013243)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![DOI](https://img.shields.io/badge/DOI-10.1103%2FPhysRevAccelBeams.21.084601-blue)](https://doi.org/10.1103/PhysRevAccelBeams.21.084601)
+
+> 📄 **This is the implementation behind the paper**
+> [X. Du and L. Groening, *"Compression and noise reduction of field maps,"* **Phys. Rev. Accel. Beams 21, 084601 (2018)**](https://doi.org/10.1103/PhysRevAccelBeams.21.084601).
+> There, HOSVD compressed the RF electric field map of an 11 m drift-tube linac (DTL)
+> cavity from **220 MB to ~20 KB** while reducing noise by **~95%**. See [Citation](#citation--引用).
 
 ---
 
 A 5-D electromagnetic field map (e.g. `(x, z, y, parameter, component)`) is large but
 highly redundant — the field is smooth, so it has a small **multilinear rank**.
 Truncated HOSVD exploits this to store the field in a tiny core tensor plus a few
-orthonormal factor matrices, giving **hundreds of times compression** while
+orthonormal factor matrices, giving **thousands of times compression** while
 **removing measurement noise** at the same time.
 
-> On the bundled synthetic 5-D demo: **447× compression**, and a field corrupted with
-> 5% noise is recovered to **0.24% error** — the truncation throws the noise away
-> along with the redundancy.
+> On the bundled synthetic 5-D demo (a 4.6 M-value field): **1159× compression**, and a
+> field corrupted with 4% noise is recovered to **0.12% error** — the truncation throws
+> the noise away along with the redundancy.
 
 一个 5 维电磁场图体积庞大但高度冗余（场是光滑的，多重秩很低）。截断 HOSVD 把场
-存成一个很小的核张量加几个正交因子矩阵，在压缩数百倍的同时去除测量噪声。
+存成一个很小的核张量加几个正交因子矩阵，在压缩上千倍的同时去除测量噪声。本仓库是
+论文 PRAB 21, 084601 (2018) 的开源实现。
 
 ---
 
@@ -30,12 +38,14 @@ orthonormal factor matrices, giving **hundreds of times compression** while
 - [Why HOSVD](#why-hosvd--为什么用-hosvd)
 - [Install](#install--安装)
 - [Quickstart](#quickstart--快速上手)
+- [Choosing ranks automatically](#choosing-ranks-automatically--自动选秩)
 - [Demo & results](#demo--results--示例与结果)
 - [API](#api--接口)
 - [How it works](#how-it-works--原理)
 - [Project layout](#project-layout--目录结构)
 - [Testing](#testing--测试)
 - [Migrating from the original API](#migrating-from-the-original-api--从旧接口迁移)
+- [Citation](#citation--引用)
 - [References](#references--参考)
 - [License](#license--许可证)
 
@@ -109,26 +119,60 @@ core, factors = hosvd(field, ranks=(3, 8, 4, 4, 3))
 
 ---
 
+## Choosing ranks automatically · 自动选秩
+
+You don't have to guess the per-mode ranks. Two adaptive criteria pick them from the
+data — pass exactly one:
+
+```python
+# 1) keep a fraction of the energy in every mode (cuts at the signal/noise elbow)
+model = HOSVDCompressor(energy_threshold=0.99).fit(field)
+
+# 2) hit a target overall relative error (error is *guaranteed* not to exceed it)
+model = HOSVDCompressor(rel_error=0.05).fit(field)
+
+print(model.effective_ranks)        # the ranks that were chosen
+```
+
+Or inspect the suggested ranks without keeping the compression:
+
+```python
+from hosvd import select_ranks
+select_ranks(field, energy_threshold=0.99)   # -> e.g. [4, 4, 4, 3, 3]
+```
+
+The `rel_error` selector uses the error-bounded ST-HOSVD strategy
+(Vannieuwenhoven et al., 2012): it spreads the squared-error budget across the modes,
+so the reconstruction is provably within the requested tolerance. On the noisy demo
+field, `energy_threshold=0.99` automatically finds the rank-4 signal and reaches
+**3000×+** compression.
+
+`energy_threshold`（按每维累计能量比例选秩，恰好切在信号/噪声拐点）与 `rel_error`
+（按目标总体相对误差选秩，并保证不超过该误差）二选一，无需手动指定每维秩。
+
+---
+
 ## Demo & results · 示例与结果
 
 ```bash
-# generate a synthetic Field_5D.npy (optional — the demo creates one if missing)
-python examples/make_synthetic_field.py --rank 3 --noise 0.05
-
 # run the full compress → reconstruct → plot pipeline
-python examples/field_map_demo.py            # add --no-show to only save PNGs
+# (auto-generates a synthetic field if Field_5D.npy is absent)
+python examples/field_map_demo.py --shape 24 160 20 20 3 --ranks 4 8 5 5 3 --noise 0.04
+
+# ...or let the rank be chosen automatically
+python examples/field_map_demo.py --energy 0.99       # add --no-show to only save PNGs
 ```
 
-Example report on the bundled synthetic field map:
+Example report on a 4.6 M-value synthetic field map (the figures below):
 
 ```
-original shape     : (20, 60, 15, 15, 3)  (810,000 values)
-kept ranks         : (3, 8, 4, 4, 3)
-stored values      : 1,812
-compression ratio  : 447.0 x
-reconstruction err : 4.98 %  (vs noisy input)
-denoising err      : 0.24 %  (vs clean signal)   <- noise removed
-SNR (vs input)     : 26.1 dB
+original shape     : (24, 160, 20, 20, 3)  (4,608,000 values)
+kept ranks         : (4, 8, 5, 5, 3)
+stored values      : 3,976
+compression ratio  : 1159.0 x
+reconstruction err : 3.99 %  (vs noisy input)
+denoising err      : 0.12 %  (vs clean signal)   <- noise removed
+SNR (vs input)     : 28.0 dB
 ```
 
 **Original vs HOSVD reconstruction** — the two field slices are visually identical;
@@ -150,13 +194,17 @@ confirming the field's physical structure is preserved:
 
 ## API · 接口
 
-### `HOSVDCompressor(ranks=None, *, method="gram", sequential=True)`
+### `HOSVDCompressor(ranks=None, *, energy_threshold=None, rel_error=None, method="gram", sequential=True)`
 
-| argument     | meaning |
-|--------------|---------|
-| `ranks`      | kept rank per mode. `None` → full rank (lossless); `int` → same for all modes; sequence → one per mode (clipped to each mode's size). |
-| `method`     | `"gram"` (default, fast/memory-light) or `"svd"` (robust for near-degenerate spectra). |
-| `sequential` | `True` → ST-HOSVD (each factor from the partially compressed tensor); `False` → classic HOSVD. |
+Give **at most one** of `ranks`, `energy_threshold`, `rel_error` (otherwise full rank).
+
+| argument           | meaning |
+|--------------------|---------|
+| `ranks`            | explicit kept rank per mode. `None` → full rank (lossless); `int` → same for all modes; sequence → one per mode (clipped to each mode's size). |
+| `energy_threshold` | auto: per mode, keep the fewest leading components whose cumulative energy reaches this fraction in `(0, 1]` (e.g. `0.999`). |
+| `rel_error`        | auto: choose ranks so the overall relative Frobenius error is guaranteed `≤` this value (e.g. `0.01`). |
+| `method`           | `"gram"` (default, fast/memory-light) or `"svd"` (robust for near-degenerate spectra). |
+| `sequential`       | `True` → ST-HOSVD (each factor from the partially compressed tensor); `False` → classic HOSVD. |
 
 | method / property            | returns |
 |------------------------------|---------|
@@ -171,6 +219,7 @@ confirming the field's physical structure is preserved:
 ### Helper modules
 
 - `hosvd.hosvd(tensor, ranks, …)` — functional API returning `(core, factors)`.
+- `hosvd.select_ranks(tensor, energy_threshold=…, rel_error=…)` — the ranks an adaptive criterion would pick.
 - `hosvd.metrics` — `relative_error`, `rmse`, `snr_db`, `psnr_db`, `compression_ratio`.
 - `hosvd.datasets` — `make_synthetic_field`, `add_noise` for reproducible test data.
 - Low-level tensor algebra: `mode_unfold`, `mode_fold`, `mode_n_product`.
@@ -202,14 +251,16 @@ smooth fields is mostly noise.
 ```
 Field-map-HOSVD/
 ├── hosvd/                       # the library
-│   ├── core.py                 # HOSVDCompressor, tensor algebra, legacy wrapper
+│   ├── core.py                 # HOSVDCompressor, auto-rank, tensor algebra, legacy wrapper
 │   ├── metrics.py              # error / SNR / compression-ratio metrics
 │   └── datasets.py             # reproducible synthetic field generator
 ├── examples/
 │   ├── make_synthetic_field.py # write a synthetic Field_5D.npy
 │   └── field_map_demo.py       # compress → reconstruct → plot
-├── tests/                      # pytest suite (34 tests)
+├── tests/                      # pytest suite (53 tests)
 ├── docs/images/                # figures used in this README
+├── .github/workflows/ci.yml    # GitHub Actions: pytest on every push
+├── CITATION.cff                # machine-readable citation
 ├── pyproject.toml              # packaging + tooling config
 ├── requirements.txt
 └── LICENSE                     # MIT
@@ -251,8 +302,38 @@ the classic-vs-sequential switch, and input validation.
 
 ---
 
+## Citation · 引用
+
+If this code is useful in your work, please cite the paper it implements
+(a [`CITATION.cff`](CITATION.cff) is included, so GitHub shows a *"Cite this
+repository"* button):
+
+> X. Du and L. Groening, **"Compression and noise reduction of field maps,"**
+> *Physical Review Accelerators and Beams* **21**, 084601 (2018).
+> [doi:10.1103/PhysRevAccelBeams.21.084601](https://doi.org/10.1103/PhysRevAccelBeams.21.084601)
+
+```bibtex
+@article{du2018compression,
+  title     = {Compression and noise reduction of field maps},
+  author    = {Du, X. and Groening, L.},
+  journal   = {Physical Review Accelerators and Beams},
+  volume    = {21},
+  number    = {8},
+  pages     = {084601},
+  year      = {2018},
+  month     = aug,
+  publisher = {American Physical Society},
+  doi       = {10.1103/PhysRevAccelBeams.21.084601},
+  url       = {https://doi.org/10.1103/PhysRevAccelBeams.21.084601}
+}
+```
+
+---
+
 ## References · 参考
 
+- X. Du and L. Groening, *Compression and noise reduction of field maps*,
+  Phys. Rev. Accel. Beams **21**, 084601 (2018). — **the paper this code implements**.
 - L. De Lathauwer, B. De Moor, J. Vandewalle, *A Multilinear Singular Value
   Decomposition*, SIAM J. Matrix Anal. Appl., 21(4), 2000.
 - N. Vannieuwenhoven, R. Vandebril, K. Meerbergen, *A new truncation strategy for the
@@ -264,4 +345,4 @@ the classic-vs-sequential switch, and input validation.
 
 ## License · 许可证
 
-[MIT](LICENSE) © 2018–2026 duxngsi
+[MIT](LICENSE) © 2018–2026 Xiaonan Du
